@@ -1,5 +1,6 @@
 # Import the dependencies.
 import numpy as np
+import datetime as dt
 
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
@@ -12,7 +13,7 @@ from flask import Flask, jsonify
 #################################################
 # Database Setup
 #################################################
-engine = create_engine("sqlite:///hawaii.sqlite")
+engine = create_engine("sqlite:///SurfsUp/Resources/hawaii.sqlite")
 
 # reflect an existing database into a new model
 Base = automap_base()
@@ -40,12 +41,12 @@ app = Flask(__name__)
 def welcome():
     """List all available api routes for Hawaii."""
     return (
-        f"Available Routes:<br/>"
-        f"/api/v1.0/precipitation<br/>"
-        f"/api/v1.0/stations<br/>"
-        f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/<start><br/>"
-        f"/api/v1.0/<start>/<end>"
+        f"Available Routes for Hawaii Weather API:<br/>"
+        f"/api/v1.0/precipitation<br/>Returns list of percipitation data for the dates between 2016-08-23 and 2017-08-23<br/><br/>"
+        f"/api/v1.0/stations<br/>Returns a JSON list of stations<br/><br/>"
+        f"/api/v1.0/tobs<br/>Returns dates and temperature observations of the most-active station for the previous year<br/><br/>"
+        f"/api/v1.0/<start><br/>Returns the minimum temperature, the average temperature, and the maximum temperature for a given start date (YYYY-MM-DD)<br/><br/>"
+        f"/api/v1.0/<start>/<end><br/>Returns the minimum temperature, the average temperature, and the maximum temperature for a specified start and start-end range<br/><br/>"
     )
 
 @app.route("/api/v1.0/precipitation")
@@ -87,43 +88,49 @@ def stations():
 def tobs():
     
     # the most active station is USC00519281, the latest date of station tobs is 2017-08-18
-    active_station = session.query(Measurement.date, Measurement.tobs).\
+    active_station = session.query(Measurement.station, Measurement.date, Measurement.tobs).\
                 filter(Measurement.station == "USC00519281").\
-                filter(Measurement.date >= (dt.date(2017, 8, 18) - dt.timedelta(days=365))).all()
+                filter(Measurement.date >= "2016-08-23").all()
     
     session.close()
 
-    tobs = []
-    for date, tobs in active_station:
-       tobs_dictionary={}
-       tobs_dictionary['date'] = date
-       tobs_dictionary['tobs'] = tobs
-       tobs.append(tobs_dictionary)
+    all_tobs = list(np.ravel(active_station))
     
-    return jsonify(tobs)
+    return jsonify(all_tobs)
 
 # the minimum temperature, the average temperature, and the maximum temperature for a specified start or start-end range
 @app.route("/api/v1.0/<start>")
-def start(date):
+def startdate(start):
     
-    avg = [func.min(Measurement.tobs),
-               func.max(Measurement.tobs),
-               func.avg(Measurement.tobs)]
-    start_date = session.query(*avg).filter(Measurement.date >= date).all()
-
-    return jsonify(start_date)
+    begin_date = dt.datetime.strptime(start, "%y-%m-%d")
+    last_tweleve_months = dt.timedelta(days=365)
+    start = begin_date - last_tweleve_months
+    end =  dt.date(2017, 8, 23)
+    query_data_startdate = session.query(func.min(Measurement.tobs),
+                               func.max(Measurement.tobs),
+                               func.avg(Measurement.tobs)).filter(Measurement.date >= start).\
+                                filter(Measurement.date <= end).all()
+    startresults = list(np.ravel(query_data_startdate))
+    return jsonify(startresults)
+    
 
 @app.route("/api/v1.0/<start>/<end>")
-def start(start, end):
-    
-    avg = [func.min(Measurement.tobs),
-               func.max(Measurement.tobs),
-               func.avg(Measurement.tobs)]
-    start_end_date = session.query(*avg).filter(Measurement.date >= start).\
-        filter(Measurement.date >= end).all()
+def startEndDate(start,end):
 
-    return jsonify(start_end_date)
+    start_date= dt.datetime.strptime(start, '%Y-%m-%d')
+    end_date= dt.datetime.strptime(end,'%Y-%m-%d')
+    last_year = dt.timedelta(days=365)
+    start = start_date-last_year
+    end = end_date-last_year
+    start_end_date = session.query(func.min(Measurement.tobs),
+                                   func.max(Measurement.tobs),
+                                   func.avg(Measurement.tobs)).\
+                                    filter(Measurement.date >= start).\
+                                        filter(Measurement.date <= end).all()
+    startendresult = list(np.ravel(start_end_date))
+
+    return jsonify(startendresult)
     
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
