@@ -42,11 +42,11 @@ def welcome():
     """List all available api routes for Hawaii."""
     return (
         f"Available Routes for Hawaii Weather API:<br/>"
-        f"/api/v1.0/precipitation<br/>Returns list of percipitation data for the dates between 2016-08-23 and 2017-08-23<br/><br/>"
+        f"/api/v1.0/precipitation<br/>Returns list of percipitation data for the dates between 08/23/16 and 08/23/17<br/><br/>"
         f"/api/v1.0/stations<br/>Returns a JSON list of stations<br/><br/>"
         f"/api/v1.0/tobs<br/>Returns dates and temperature observations of the most-active station for the previous year<br/><br/>"
-        f"/api/v1.0/<start><br/>Returns the minimum temperature, the average temperature, and the maximum temperature for a given start date (YYYY-MM-DD)<br/><br/>"
-        f"/api/v1.0/<start>/<end><br/>Returns the minimum temperature, the average temperature, and the maximum temperature for a specified start and start-end range<br/><br/>"
+        f"/api/v1.0/start/<start><br/>Returns the minimum/average/maximum temperature for a given start date<br/><br/>"
+        f"/api/v1.0/start/<start>/end/<end><br/>Returns the minimum/average/maximum temperature for a specified start and start-end range<br/><br/>"
     )
 
 @app.route("/api/v1.0/precipitation")
@@ -99,34 +99,32 @@ def tobs():
     return jsonify(all_tobs)
 
 # the minimum temperature, the average temperature, and the maximum temperature for a specified start or start-end range
-@app.route("/api/v1.0/<start>")
+@app.route("/api/v1.0/start/<start>")
 def startdate(start):
     
-    begin_date = dt.datetime.strptime(start, "%y-%m-%d")
-    last_tweleve_months = dt.timedelta(days=365)
-    start = begin_date - last_tweleve_months
-    end =  dt.date(2017, 8, 23)
+    start = dt.datetime.strptime(start, "%m%d%Y")
     query_data_startdate = session.query(func.min(Measurement.tobs),
                                func.max(Measurement.tobs),
-                               func.avg(Measurement.tobs)).filter(Measurement.date >= start).\
-                                filter(Measurement.date <= end).all()
+                               func.avg(Measurement.tobs)).filter(Measurement.date >= start ).all()
+    session.close()
+    
     startresults = list(np.ravel(query_data_startdate))
+
     return jsonify(startresults)
     
 
-@app.route("/api/v1.0/<start>/<end>")
+@app.route("/api/v1.0/start/<start>/end/<end>")
 def startEndDate(start,end):
 
-    start_date= dt.datetime.strptime(start, '%Y-%m-%d')
-    end_date= dt.datetime.strptime(end,'%Y-%m-%d')
-    last_year = dt.timedelta(days=365)
-    start = start_date-last_year
-    end = end_date-last_year
+    start= dt.datetime.strptime(start, '%m%d%Y')
+    end= dt.datetime.strptime(end,'%m%d%Y')
     start_end_date = session.query(func.min(Measurement.tobs),
                                    func.max(Measurement.tobs),
                                    func.avg(Measurement.tobs)).\
                                     filter(Measurement.date >= start).\
                                         filter(Measurement.date <= end).all()
+    session.close()
+    
     startendresult = list(np.ravel(start_end_date))
 
     return jsonify(startendresult)
