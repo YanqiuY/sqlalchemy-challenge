@@ -41,10 +41,10 @@ app = Flask(__name__)
 def welcome():
     """List all available api routes for Hawaii."""
     return (
-        f"Available Routes for Hawaii Weather API:<br/>"
-        f"/api/v1.0/precipitation<br/>Returns list of percipitation data for the dates between 08/23/16 and 08/23/17<br/><br/>"
+        f"Available Routes for Hawaii Weather data from 01/01/2010 to 08/23/2017:<br/><br/>"
+        f"/api/v1.0/precipitation<br/>Returns list of percipitation data for the dates between 08/23/2016 and 08/23/2017<br/><br/>"
         f"/api/v1.0/stations<br/>Returns a JSON list of stations<br/><br/>"
-        f"/api/v1.0/tobs<br/>Returns dates and temperature observations of the most-active station for the previous year<br/><br/>"
+        f"/api/v1.0/tobs<br/>Returns dates and temperature observations of the most-active station(USC00519281) for the previous year<br/><br/>"
         f"/api/v1.0/start/<start><br/>Returns the minimum/average/maximum temperature for a given start date<br/><br/>"
         f"/api/v1.0/start/<start>/end/<end><br/>Returns the minimum/average/maximum temperature for a specified start and start-end range<br/><br/>"
     )
@@ -100,7 +100,7 @@ def tobs():
 
 # the minimum temperature, the average temperature, and the maximum temperature for a specified start or start-end range
 @app.route("/api/v1.0/start/<start>")
-def startdate(start):
+def start_date(start):
     
     start = dt.datetime.strptime(start, "%m%d%Y")
     query_data_startdate = session.query(func.min(Measurement.tobs),
@@ -114,7 +114,7 @@ def startdate(start):
     
 
 @app.route("/api/v1.0/start/<start>/end/<end>")
-def startEndDate(start,end):
+def start_end_date(start,end):
 
     start= dt.datetime.strptime(start, '%m%d%Y')
     end= dt.datetime.strptime(end,'%m%d%Y')
