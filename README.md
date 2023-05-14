@@ -1,4 +1,7 @@
+
 # sqlalchemy-challenge
+
+#### all code is in folder 'SurfsUp'
 
 ##### Part 1: Analyze and Explore the Hawaii Climate Data
 
